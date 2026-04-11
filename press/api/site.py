@@ -516,6 +516,8 @@ def get_app_subscriptions(app_plans, team_name: str):
 	team: Team | None = None
 
 	for app_name, plan_name in app_plans.items():
+		# Extract plan_name if it's a dict
+		plan_name = plan_name.get("name") if isinstance(plan_name, dict) else plan_name
 		is_free = frappe.db.get_value("Marketplace App Plan", plan_name, "is_free")
 		if not is_free:
 			if not team:

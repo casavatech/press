@@ -232,7 +232,7 @@ RUN --mount=type=cache,target=/home/frappe/.cache,uid=1000,gid=1000 python${PYTH
 RUN --mount=type=cache,target=/home/frappe/.cache,uid=1000,gid=1000 python${PYTHON_VERSION} -m pip install --upgrade setuptools
 
 RUN git config --global advice.detachedHead false
-
+RUN git config --global --add safe.directory '*'
 ENV PYTHONUNBUFFERED 1
 
 # For the sake of completing the step
@@ -259,9 +259,13 @@ COPY --chown=frappe:frappe redis /home/frappe/frappe-bench/redis
 COPY --chown=frappe:frappe .vimrc /home/frappe/.vimrc
 COPY --chown=frappe:frappe common_site_config.json /home/frappe/frappe-bench/sites/common_site_config.json
 
+# switching to user root to set permissions for  copy and execution of get_cached_app.py
+# file /usr/local/bin/get_cached_app.py needs to be owned by root to be executable by all users and to avoid permission issues when copying from the host system where the file might be owned by root or another user  
+user root
 # Pass control of get-app to a python file
 COPY get_cached_app.py /usr/local/bin/get_cached_app.py
 RUN chmod +x /usr/local/bin/get_cached_app.py
+user frappe
 
 # Install other apps
 {% for app in doc.apps %}

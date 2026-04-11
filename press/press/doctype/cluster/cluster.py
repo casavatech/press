@@ -861,14 +861,16 @@ class Cluster(Document):
 					],
 					"ToPort": 993,
 				},
+
 				{
 					"FromPort": 995,
 					"IpProtocol": "tcp",
 					"IpRanges": [
 						{"CidrIp": self.subnet_cidr_block, "Description": "POP3 from private network"}
 					],
-					"ToPort": 993,
+					"ToPort": 995,
 				},
+
 				{
 					"FromPort": 110,
 					"IpProtocol": "tcp",

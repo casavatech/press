@@ -182,7 +182,7 @@ class Ansible:
 			start_at_task=None,
 			syntax=False,
 			verbosity=1,
-			ssh_common_args=self._get_ssh_proxy_commad(server),
+			ssh_common_args=self._get_ssh_proxy_command(server),
 		)
 
 		self.loader = DataLoader()
@@ -199,7 +199,7 @@ class Ansible:
 		self.display.verbosity = 1
 		self.create_ansible_play()
 
-	def _get_ssh_proxy_commad(self, server):
+	def _get_ssh_proxy_command(self, server):
 		# Note: ProxyCommand must be enclosed in double quotes
 		# because it contains spaces
 		# and the entire argument must be enclosed in single quotes
@@ -208,12 +208,31 @@ class Ansible:
 		# and https://unix.stackexchange.com/a/303717
 		# for details
 		proxy_command = None
-		if hasattr(self.server, "bastion_host") and self.server.bastion_host:
-			proxy_command = f'-o ProxyCommand="ssh -W %h:%p \
-					{server.bastion_host.ssh_user}@{server.bastion_host.ip} \
-						-p {server.bastion_host.ssh_port}"'
+
+		# Support both older `bastion_host` objects and current `bastion_server` links.
+		bastion = getattr(self.server, "bastion_host", None) or getattr(self.server, "bastion_server", None)
+		if not bastion:
+			return proxy_command
+
+		if isinstance(bastion, str):
+			for doctype in ("Server", "Proxy Server", "Database Server"):
+				if frappe.db.exists(doctype, bastion):
+					bastion = frappe.get_doc(doctype, bastion)
+					break
+
+		bastion_user = getattr(bastion, "ssh_user", None)
+		bastion_host = getattr(bastion, "ip", None) or getattr(bastion, "private_ip", None)
+		bastion_port = getattr(bastion, "ssh_port", None) or 22
+		if bastion_user and bastion_host:
+			proxy_command = (
+				f'-o ProxyCommand="ssh -W %h:%p {bastion_user}@{bastion_host} -p {bastion_port}"'
+			)
 
 		return proxy_command
+
+	# Backward-compatible alias for callers using the old misspelled method.
+	def _get_ssh_proxy_commad(self, server):
+		return self._get_ssh_proxy_command(server)
 
 	def patch(self):
 		def modified_action_module_run(*args, **kwargs):

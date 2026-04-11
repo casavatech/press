@@ -4865,9 +4865,13 @@ def prepare_site(site: str, subdomain: str | None = None) -> dict:
 		"files": files,
 	}
 
+logger = frappe.logger("import", allow_site=True, file_count=5, max_size=250000)
+logger.setLevel("INFO")
+logger.info("My first log")
 
 @frappe.whitelist()
 def options_for_new(group: str | None = None, selected_values=None) -> dict:
+	logger().info("[press.api.site.options_for_new] called")
 	domain = frappe.db.get_single_value("Press Settings", "domain")
 	selected_values = frappe.parse_json(selected_values) if selected_values else frappe._dict()
 
